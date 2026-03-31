@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#0a0a0f"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="RunCoach"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <title>RunCoach</title>
+  <style>
+    :root {
+      --bg:#0a0a0f; --bg2:#111118; --bg3:#1a1a26;
+      --surface:#16161f; --surface2:#1e1e2e; --border:#2a2a3d;
+      --accent:#e8ff47; --accent2:#47ffe8;
+      --effort:#ff4757; --rest:#2ed573; --warm:#ffa502; --cool:#5352ed;
+      --text:#f0f0f8; --text2:#9090b0; --text3:#5a5a7a;
+      --mono:'DM Mono',monospace; --display:'Bebas Neue',cursive; --body:'DM Sans',sans-serif;
+      --r:12px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{background:var(--bg);color:var(--text);font-family:var(--body);height:100dvh;overflow:hidden}
+    body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity:.4}
+
+    /* ══ LAYOUT ══ */
+    #app{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column}
+
+    /* ══ HEADER ══ */
+    header{display:flex;align-items:center;justify-content:space-between;padding:13px 18px 11px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{font-family:var(--display);font-size:25px;letter-spacing:2px}
+    .logo span{color:var(--accent)}
+    .gps-status{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px}
+    .gps-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);transition:background .3s}
+    .gps-dot.on{background:var(--rest);animation:blink 1.5s infinite}
+    .gps-dot.error{background:var(--effort)}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+    /* ══ SCROLL ══ */
+    #configurator{flex:1;overflow-y:auto;padding:14px 14px 0;display:flex;flex-direction:column;gap:12px}
+    #configurator::-webkit-scrollbar{width:3px}
+    #configurator::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+    .section-label{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;display:flex;flex-direction:column;gap:10px}
+    .field-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .field-label{font-size:13px;color:var(--text2);flex:1;line-height:1.3}
+    .field-label small{display:block;font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px}
+    .field-value{display:flex;align-items:center;gap:7px}
+    .btn-icon{width:32px;height:32px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none;flex-shrink:0}
+    .btn-icon:active{transform:scale(.90);background:var(--border)}
+    .val-display{font-family:var(--mono);font-size:16px;color:var(--accent);min-width:52px;text-align:center}
+    .divider{height:1px;background:var(--border)}
+
+    /* Toggle */
+    .toggle-row{display:flex;align-items:center;justify-content:space-between}
+    .toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+    .toggle input{opacity:0;width:0;height:0}
+    .toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.3s}
+    .toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:var(--text3);border-radius:50%;transition:.3s}
+    .toggle input:checked+.toggle-slider{background:var(--accent)}
+    .toggle input:checked+.toggle-slider:before{transform:translateX(20px);background:var(--bg)}
+
+    /* Allure banner */
+    .allure-banner{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .allure-banner-label{font-size:13px;color:var(--text);font-weight:500}
+    .allure-banner-label small{display:block;font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px}
+
+    /* Segments */
+    .segments-list{display:flex;flex-direction:column;gap:6px}
+    .segment-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:9px;animation:fadeIn .2s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+    .seg-index{font-family:var(--mono);font-size:11px;color:var(--text3);min-width:16px;text-align:right}
+    .seg-bar{width:4px;height:36px;border-radius:2px;background:var(--effort);flex-shrink:0}
+    .segment-info{flex:1;min-width:0}
+    .segment-info strong{font-size:13px;display:block}
+    .segment-info span{font-family:var(--mono);font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+    .btn-del{width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text3);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+    .btn-del:active{color:var(--effort);border-color:var(--effort)}
+    .empty-state{text-align:center;padding:18px;color:var(--text3);font-family:var(--mono);font-size:11px;letter-spacing:1px}
+
+    /* Add form */
+    .add-form{background:var(--bg2);border:1px dashed var(--border);border-radius:var(--r);padding:13px;display:flex;flex-direction:column;gap:9px}
+    .add-form-row{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text2);flex-wrap:wrap}
+    .add-form-row.dim{opacity:.35;pointer-events:none}
+    input[type="number"]{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:14px;padding:6px 8px;text-align:center;outline:none;-moz-appearance:textfield}
+    input[type="number"]:focus{border-color:var(--accent)}
+    input[type="number"]::-webkit-inner-spin-button{display:none}
+    input[type="number"]:disabled{color:var(--text3);border-color:var(--border);background:var(--surface);opacity:.5}
+    .inp-s{width:60px}.inp-p{width:48px}.inp-tol{width:52px}
+    .btn-add-seg{width:100%;padding:9px;background:transparent;color:var(--accent2);border:1px dashed var(--accent2);border-radius:8px;font-family:var(--mono);font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .2s}
+    .btn-add-seg:active{background:rgba(71,255,232,.08)}
+
+    /* Preview */
+    .prev-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+    .prev-row:last-child{border-bottom:none}
+    .prev-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .prev-name{flex:1;color:var(--text2)}
+    .prev-val{font-family:var(--mono);font-size:11px;color:var(--text3)}
+
+    /* Start */
+    .start-area{padding:12px 14px 20px;flex-shrink:0}
+    .btn-start{width:100%;padding:15px;background:var(--accent);color:var(--bg);border:none;border-radius:var(--r);font-family:var(--display);font-size:21px;letter-spacing:3px;cursor:pointer;transition:all .2s}
+    .btn-start:active{transform:scale(.97);background:#d4e840}
+    .btn-start:disabled{background:var(--border);color:var(--text3);cursor:not-allowed;transform:none}
+
+    /* ══ RUNNER ══ */
+    #runner{display:none;position:fixed;inset:0;z-index:200;background:var(--bg);flex-direction:column}
+    #runner.active{display:flex}
+
+    .runner-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .rh-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:2px}
+    .rh-name{font-family:var(--display);font-size:20px;letter-spacing:2px;margin-top:1px}
+    .btn-stop{width:36px;height:36px;border:1px solid var(--effort);border-radius:8px;background:transparent;color:var(--effort);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+    .runner-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:space-around;padding:6px 16px;position:relative;overflow:hidden}
+    .phase-glow{position:absolute;width:320px;height:320px;border-radius:50%;filter:blur(90px);opacity:.10;transition:background .8s;animation:pulse 3s ease-in-out infinite;pointer-events:none}
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:.10}50%{transform:scale(1.15);opacity:.16}}
+
+    .phase-badge{font-family:var(--mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;padding:5px 14px;border-radius:100px;border:1px solid currentColor;position:relative;z-index:1;transition:color .5s}
+
+    /* Ring */
+    .ring-wrap{position:relative;z-index:1;display:flex;align-items:center;justify-content:center}
+    .ring-svg{transform:rotate(-90deg)}
+    .ring-bg{fill:none;stroke:var(--border);stroke-width:7}
+    .ring-prog{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .9s linear,stroke .5s}
+    .ring-center{position:absolute;display:flex;flex-direction:column;align-items:center}
+    .ring-time{font-family:var(--display);font-size:60px;line-height:1;letter-spacing:2px;transition:color .5s}
+    .ring-sub{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:2px;margin-top:2px}
+
+    /* Pace alert */
+    .pace-alert{position:relative;z-index:1;width:100%;max-width:340px;padding:6px 14px;border-radius:8px;text-align:center;font-family:var(--display);font-size:28px;letter-spacing:4px;border:1px solid transparent;transition:all .4s;opacity:0;height:0;overflow:hidden}
+    .pace-alert.show{opacity:1;height:auto;padding:8px 14px}
+    .pace-alert.too-fast{border-color:var(--effort);color:var(--effort);background:rgba(255,71,87,.10)}
+    .pace-alert.too-slow{border-color:var(--warm);color:var(--warm);background:rgba(255,165,2,.10)}
+
+    /* 4-stat grid */
+    .stats-grid{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:7px;width:100%;max-width:340px}
+    .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:9px 8px;text-align:center}
+    .stat-val{font-family:var(--mono);font-size:18px;color:var(--accent);display:block}
+    .stat-label{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+    /* Target info strip */
+    .target-strip{position:relative;z-index:1;width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center}
+
+    /* Progress */
+    .prog-wrap{position:relative;z-index:1;width:100%;max-width:340px}
+    .prog-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px}
+    .prog-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+    .prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s}
+
+    /* Controls */
+    .runner-controls{padding:8px 14px 18px;flex-shrink:0;display:flex;gap:8px}
+    .btn-pause{flex:1;padding:13px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:var(--display);font-size:18px;letter-spacing:2px;cursor:pointer;transition:all .2s}
+    .btn-skip{width:50px;padding:13px 0;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text2);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+    .btn-pause:active,.btn-skip:active{transform:scale(.96)}
+
+    /* Complete */
+    #completeScreen{display:none;position:fixed;inset:0;z-index:300;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:36px;text-align:center}
+    #completeScreen.active{display:flex}
+    .complete-emoji{font-size:56px}
+    .complete-title{font-family:var(--display);font-size:50px;letter-spacing:4px;color:var(--accent)}
+    .complete-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:310px}
+    .complete-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+    .complete-stat .v{font-family:var(--display);font-size:28px;color:var(--accent)}
+    .complete-stat .l{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:2px}
+    .btn-back{width:100%;max-width:310px;padding:14px;background:var(--accent);color:var(--bg);border:none;border-radius:var(--r);font-family:var(--display);font-size:19px;letter-spacing:2px;cursor:pointer}
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">Run<span>Coach</span></div>
+    <div class="gps-status">
+      <div class="gps-dot" id="gpsDot"></div>
+      <span id="gpsLabel">GPS OFF</span>
+    </div>
+  </header>
+
+  <div id="configurator">
+
+    <!-- Échauffement -->
+    <div>
+      <div class="section-label">Échauffement</div>
+      <div class="card">
+        <div class="field-row">
+          <div class="field-label">Durée <small>minutes</small></div>
+          <div class="field-value">
+            <button class="btn-icon" onclick="adj('warm',-1)">−</button>
+            <span class="val-display" id="warm-disp">10</span>
+            <button class="btn-icon" onclick="adj('warm',1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggle allure -->
+    <div class="allure-banner">
+      <div class="allure-banner-label">
+        Allure cible activée
+        <small>Guidage vocal si hors tolérance</small>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="paceGuideToggle" checked onchange="onPaceGuideToggle()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <!-- Segments -->
+    <div>
+      <div class="section-label">Segments d'effort</div>
+      <div class="card" style="gap:10px">
+        <div class="segments-list" id="segments-list">
+          <div class="empty-state">Aucun segment — ajoutez-en ci-dessous</div>
+        </div>
+        <div class="divider"></div>
+        <div class="add-form">
+          <div class="section-label" style="margin-bottom:0">Nouveau segment</div>
+          <div class="add-form-row">
+            <span>Distance</span>
+            <input type="number" class="inp-s" id="seg-dist" value="1" min="0.1" step="0.1">
+            <span>km</span>
+          </div>
+          <div class="add-form-row" id="pace-row">
+            <span>Allure cible</span>
+            <input type="number" class="inp-p" id="seg-pm" value="5" min="2" max="15">
+            <span>min</span>
+            <input type="number" class="inp-p" id="seg-ps" value="15" min="0" max="59">
+            <span>sec /km</span>
+          </div>
+          <div class="add-form-row" id="tol-row">
+            <span>Tolérance ±</span>
+            <input type="number" class="inp-tol" id="seg-tol" value="10" min="1" max="60">
+            <span>sec /km</span>
+          </div>
+          <button class="btn-add-seg" onclick="addSegment()">＋ Ajouter ce segment</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repos -->
+    <div>
+      <div class="section-label">Repos entre segments</div>
+      <div class="card">
+        <div class="field-row">
+          <div class="field-label">Durée <small>minutes</small></div>
+          <div class="field-value">
+            <button class="btn-icon" onclick="adj('rest',-1)">−</button>
+            <span class="val-display" id="rest-disp">2</span>
+            <button class="btn-icon" onclick="adj('rest',1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Retour au calme -->
+    <div>
+      <div class="section-label">Retour au calme</div>
+      <div class="card">
+        <div class="field-row">
+          <div class="field-label">Durée <small>minutes</small></div>
+          <div class="field-value">
+            <button class="btn-icon" onclick="adj('cool',-1)">−</button>
+            <span class="val-display" id="cool-disp">10</span>
+            <button class="btn-icon" onclick="adj('cool',1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Annonces vocales -->
+    <div>
+      <div class="section-label">Annonces vocales</div>
+      <div class="card">
+        <div class="field-row">
+          <div class="field-label">Allure toutes les <small>secondes — 0 = désactivé</small></div>
+          <div class="field-value">
+            <button class="btn-icon" onclick="adj('paceFreq',-5)">−</button>
+            <span class="val-display" id="paceFreq-disp">10s</span>
+            <button class="btn-icon" onclick="adj('paceFreq',5)">+</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="field-row">
+          <div class="field-label">Distance segment tous les <small>mètres — 0 = désactivé</small></div>
+          <div class="field-value">
+            <button class="btn-icon" onclick="adj('distFreq',-50)">−</button>
+            <span class="val-display" id="distFreq-disp">200m</span>
+            <button class="btn-icon" onclick="adj('distFreq',50)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aperçu -->
+    <div>
+      <div class="section-label">Aperçu de la séance</div>
+      <div class="card" id="preview-card">
+        <div class="empty-state">Ajoutez des segments pour voir l'aperçu</div>
+      </div>
+    </div>
+
+    <div style="height:8px"></div>
+  </div>
+
+  <div class="start-area">
+    <button class="btn-start" id="btnStart" onclick="startSession()" disabled>▶ DÉMARRER LA SÉANCE</button>
+  </div>
+</div>
+
+<!-- ══ RUNNER ══ -->
+<div id="runner">
+  <div class="runner-header">
+    <div>
+      <div class="rh-label">En cours</div>
+      <div class="rh-name" id="rhName">ÉCHAUFFEMENT</div>
+    </div>
+    <button class="btn-stop" onclick="stopSession()">✕</button>
+  </div>
+
+  <div class="runner-body">
+    <div class="phase-glow" id="phaseGlow"></div>
+    <div class="phase-badge" id="phaseBadge">ÉCHAUFFEMENT</div>
+
+    <!-- Main timer ring -->
+    <div class="ring-wrap">
+      <svg class="ring-svg" width="180" height="180" viewBox="0 0 180 180">
+        <circle class="ring-bg"   cx="90" cy="90" r="79"/>
+        <circle class="ring-prog" id="ringProg" cx="90" cy="90" r="79"
+          stroke-dasharray="496.46" stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-time" id="ringTime">00:00</div>
+        <div class="ring-sub"  id="ringSub">RESTANT</div>
+      </div>
+    </div>
+
+    <!-- Pace alert (UP / DOWN) -->
+    <div class="pace-alert" id="paceAlert"></div>
+
+    <!-- Target strip (effort phase only) -->
+    <div class="target-strip" id="targetStrip" style="display:none"></div>
+
+    <!-- 4-stat grid — always visible -->
+    <div class="stats-grid">
+      <div class="stat-box">
+        <span class="stat-val" id="statPace">--:--</span>
+        <div class="stat-label">Allure /km</div>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val" id="statSegDist">0.00</span>
+        <div class="stat-label" id="statSegDistLabel">km séquence</div>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val" id="statTotalDist">0.00</span>
+        <div class="stat-label">km total</div>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val" id="statStep">—</span>
+        <div class="stat-label">segment</div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="prog-wrap">
+      <div class="prog-meta">
+        <span id="progLabel">Progression</span>
+        <span id="progPct">0 %</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="runner-controls">
+    <button class="btn-pause" id="pauseBtn" onclick="togglePause()">⏸ PAUSE</button>
+    <button class="btn-skip"  onclick="skipPhase()" title="Phase suivante">⏭</button>
+  </div>
+</div>
+
+<!-- ══ COMPLETE ══ -->
+<div id="completeScreen">
+  <div class="complete-emoji">🏁</div>
+  <div class="complete-title">BRAVO !</div>
+  <div class="complete-grid" id="completeGrid"></div>
+  <button class="btn-back" onclick="closeComplete()">↩ RETOUR</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
